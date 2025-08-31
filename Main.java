@@ -15,7 +15,6 @@ public class Main {
         System.out.print("Введите пароль: ");
         String password = scanner.nextLine();
 
-        String remotePath = "upload/addresses.json";
 
         try {
             JSch jsch = new JSch();
@@ -29,13 +28,27 @@ public class Main {
 
             ChannelSftp channelSftp = (ChannelSftp) channel;
 
+            System.out.print("Подключение установлено.\nВ");
+            String remotePath = "";
+            boolean fileFound = false;
+            while (!fileFound) {
+                System.out.print("ведите путь до файла адресов:\n");
+                remotePath = scanner.nextLine();
+                try {
+                    channelSftp.lstat(remotePath);
+                    fileFound = true;
+                } catch (Exception e) {
+                    System.out.println("Файл не найден.");
+                }
+            }
+
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             channelSftp.get(remotePath, outputStream);
             InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
             HashMap<String, String> addresses = JsonReader.readJson(inputStream);
-            System.out.print("Подключение установлено. ");
+            System.out.print("Файл адресов найден.\n");
             while(true) {
-                System.out.print("Меню возможных действий: \n" +
+                System.out.print("Меню возможных действий:\n" +
                         "1. Получение списка пар \"домен – адрес\" из файла.\n" +
                         "2. Получение IP-адреса по доменному имени.\n" +
                         "3. Получение доменного имени по IP-адресу.\n" +
@@ -44,7 +57,13 @@ public class Main {
                         "6. Завершение работы.\n" +
                         "Введите номер действия чтобы продолжить.\n");
 
-                    int action = Integer.parseInt(scanner.nextLine());
+                    int action;
+                    try {
+                        action = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.print("Введён некорректный номер действия.");
+                        continue;
+                    }
 
                     switch (action) {
                         case 1:
